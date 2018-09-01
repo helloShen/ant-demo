@@ -1,2 +1,195 @@
-# ant-demo
-To Understand how ant works.
+# 这是一个用ant来编译，部署，执行一个小型项目的Demo
+代码一多，用shell脚本编译部署就有点吃力了。这是一个系列，试用3个最常用的部署工具，
+1. ant
+2. maven
+3. gradle
+
+这是其中ant的Demo。
+
+### 安装Ant
+如果未安装Ant，从下面地址下载最新的安装包，
+```bash
+http://ant.apache.org
+```
+
+解压，
+```
+tar -vxzf apache-ant-1.10.5-bin.tar.gz
+```
+
+Linux系统复制到下面路径，
+```
+/usr/local/
+```
+一般来说，`/usr/bin`存放系统预装的程序，`/usr/local/bin`存放用户自己安装的程序。但Ant安装包里的程序数量较多，如果不想给`/usr/local/bin`制造混乱，最好将解压以后的`apache-ant-1.10.5`包直接放在`/usr/local/`路径下，所以最终`ant`程序的绝对路径为，
+```
+/usr/local/apache-ant-1.10.5/bin
+```
+修改`~/.bash_profile`，把上面这个路径添加到环境变量`PATH`，
+```
+export ANT_HOME="/usr/local/apache-ant-1.10.5"
+export PATH="${ANT_HOME}/bin:${PATH}"
+```
+因为我用的是`zsh`，还需要在改一下`~/.zshrc`，方法不变。重启终端后，输入下面命令检查，
+```
+ant -version
+```
+看到如下显示，说明安装完成，
+```
+Apache Ant(TM) version 1.10.5 compiled on July 10 2018
+```
+
+### 创建一个简单计算器项目
+项目只有一个`Calculator.java`类，以及一个Ant`build.xml`构建文件，具体拓扑如下，
+```
+.
+├── bin
+│   └── com
+│       └── ciaoshen
+│           └── ant
+│               └── demo
+│                   └── Calculator.class
+├── build.xml
+├── lib
+└── src
+    ├── main
+    │   └── com
+    │       └── ciaoshen
+    │           └── ant
+    │               └── demo
+    │                   └── Calculator.java
+    └── test
+        └── com
+            └── ciaoshen
+                └── ant
+                    └── demo
+```
+源代码在`src`文件夹下，类文件在`bin`文件夹。项目源代码和测试代码分开放，项目代码在`src/main`路径下，而`src/test`是预留给以后Junit测试类源码的。项目源代码和测试类代码属于同一个包`com.ciaoshen.ant.demo`。
+
+`Calculator.java`是一个最简单的只能做加减乘除的计算器。`main()`函数里运行一个简单的测试。
+```java
+package com.ciaoshen.ant.demo;
+import java.util.Random;
+
+public class Calculator {
+
+    public static int add(int a, int b) {
+        return a + b;
+    }
+    public static int minus(int a, int b) {
+		return a - b;
+	}
+	public static int multiply(int a, int b) {
+		return a * b;
+	}
+    public static int divide(int a, int b) {
+        if (b == 0) {
+            throw new IllegalArgumentException("Dividor can not be 0! Your param a = " + a + ", b = " + b);
+        }
+		return a / b;
+	}
+
+    // traditional unit test
+    private static void test(int a, int b) {
+        System.out.println(a + " + " + b + " = " + add(a,b) + "\t[answer=" + (a + b) + "]");
+        System.out.println(a + " - " + b + " = " + minus(a,b) + "\t[answer=" + (a - b) + "]");
+        System.out.println(a + " * " + b + " = " + multiply(a,b) + "\t[answer=" + (a * b) + "]");
+        int quotient = divide(a,b);
+        if (b != 0) {
+            System.out.println(a + " / " + b + " = " + divide(a,b) + "\t[answer=" + (a / b) + "]");
+        } else {
+            System.out.println(a + " / " + b + " = " + divide(a,b) + "\t[ERR: should throw IllegalArgumentException!]");
+        }
+    }
+
+    public static void main(String[] args) {
+        int max = 1000;
+        Random r = new Random();
+        test(r.nextInt(max), r.nextInt(max) + 1);
+    }
+}
+```
+
+在`build.xml`文件里，定义了：
+1. 项目根目录，ant路径等环境变量
+2. 项目的源码，字节码，测试代码，库文件的路径
+3. 编译，运行，清理等这些目标任务以及他们之间的依赖关系
+
+主要用到了3中对象：
+1. `<property>`: 顾名思义，定义环境变量和路径
+2. `<path>`: 如果`classpath`比较复杂，或者还包含一系列`.jar`包的话，可以用`<path>`和`<fileset>`定义一组文件的集合
+3. `<target>`: 封装了像“编译”，“执行”，“清理”等一系列具体的任务。我定义了两条不同的主线任务来串联其他的支线，
+    * `traditional`: 直接运行`main()`函数中的测试
+    * `junit`: 为以后JUnit单元测试留下的入口
+
+有一些内置标签很重要。ant只是让我们可以用`XML`写编译脚本，这样结构和逻辑能清楚一点。但最终实际执行的还是shell脚本。从下面这些标签可以看出来，ant只是负责把我们设置的参数收集起来，统一执行shell脚本而已，
+1. `<javac>`
+2. `<java>`
+3. `<mkdir>`
+4. `<echo>`
+5. ...
+
+```xml
+<?xml version="1.0"?>
+<project name="Ant Demo" basedir="." default="traditional">
+    <!-- project meta info -->
+    <property name="ant.file" value="./build.xml"/>
+    <property name="ant.home" value="/usr/local/apache-ant-1.10.5"/>
+    <property name="ant.version" value="1.10.5"/>
+    <!-- main path -->
+    <property name="main.dir" value="src/main"/>
+    <property name="test.dir" value="src/test"/>
+    <property name="bin.dir" value="bin"/>
+    <property name="lib.dir" value="lib"/>
+    <!-- entry points -->
+    <property name="traditional.entry" value="com.ciaoshen.ant.demo.Calculator"/>
+    <property name="junit.entry" value="com.ciaoshen.ant.demo.CalculatorTest/"/>
+
+    <!-- build classpath collection with a path-like structure -->
+    <path id="build.classpath">
+        <pathelement path="${bin.dir}"/>
+        <fileset dir="${lib.dir}">
+            <include name="*.jar"/>
+        </fileset>
+    </path>
+
+    <!-- targets -->
+    <target name="traditional"
+        depends="info,compile,traditional.exec">
+        <echo>Finish!</echo>
+    </target>
+    <target name="junit"
+        depends="info,compile,junit.exec">
+    </target>
+    <target name="info">
+        <echo>This is ${project-name}!</echo>
+    </target>
+    <target name="compile" description="Compile java source codes.">
+        <echo>Compile .java source file under ${main.dir}!</echo>
+        <mkdir dir="${bin.dir}"/>
+        <javac destdir="${bin.dir}" srcdir="${main.dir}" source="1.6" debug="on" includeantruntime="false">
+            <include name="**/*.java"/>
+            <classpath refid="build.classpath"/>
+        </javac>
+    </target>
+    <target name="traditional.exec" description="Launch traditional test.">
+        <echo>Run ${traditional.entry}!</echo>
+        <java classname="${traditional.entry}">
+            <classpath refid="build.classpath"/>
+        </java>
+    </target>
+    <target name="junit.exec" description="Launch Junit test.">
+        <echo>Run ${junit.entry}!</echo>
+        <java classname="${junit.entry}">
+            <classpath refid="build.classpath"/>
+        </java>
+    </target>
+    <target name="clean" description="Clean output directories.">
+        <delete>
+            <fileset dir="${bin.dir}">
+                <include name="**/*.class"/>
+            </fileset>
+        </delete>
+    </target>
+</project>
+```
