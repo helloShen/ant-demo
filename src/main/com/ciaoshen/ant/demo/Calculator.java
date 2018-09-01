@@ -1,7 +1,7 @@
 /**
- * JUnit5 Tranditional Test Main Entry
+ * Ant Demo
  */
-package com.ciaoshen.junit5.demo;
+package com.ciaoshen.ant.demo;
 import java.util.Random;
 
 public class Calculator {

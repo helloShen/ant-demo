@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<project name="Junit 5 Demo" basedir="." default="traditional">
+<project name="Ant Demo" basedir="." default="traditional">
     <!-- project meta info -->
     <property name="ant.file" value="./build.xml"/>
     <property name="ant.home" value="/usr/local/apache-ant-1.10.5"/>
@@ -10,7 +10,7 @@
     <property name="bin.dir" value="bin"/>
     <property name="lib.dir" value="lib"/>
     <!-- entry points -->
-    <property name="traditional.entry" value="com.ciaoshen.junit5.demo.Calculator"/>
+    <property name="traditional.entry" value="com.ciaoshen.ant.demo.Calculator"/>
     <!-- <property name="junit.entry" value="${bin.dir}/"/>
     <property name="junit.entry.file" value=""/> -->
 
@@ -36,7 +36,7 @@
     <target name="compile" description="Compile java source codes.">
         <echo>Compile .java source file under ${main.dir}!</echo>
         <mkdir dir="${bin.dir}"/>
-        <javac destdir="${bin.dir}" srcdir="${main.dir}" source="1.7" debug="on" includeantruntime="false">
+        <javac destdir="${bin.dir}" srcdir="${main.dir}" source="1.6" debug="on" includeantruntime="false">
             <include name="**/*.java"/>
             <classpath refid="build.classpath"/>
         </javac>
