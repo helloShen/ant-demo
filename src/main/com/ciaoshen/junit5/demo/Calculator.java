@@ -16,7 +16,7 @@ public class Calculator {
 		return a * b;
 	}
     public static int divide(int a, int b) {
-            if (b == 0) {
+        if (b == 0) {
             throw new IllegalArgumentException("Dividor can not be 0! Your param a = " + a + ", b = " + b);
         }
 		return a / b;
