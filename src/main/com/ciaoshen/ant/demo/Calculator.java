@@ -24,14 +24,19 @@ public class Calculator {
 
     // traditional unit test
     private static void test(int a, int b) {
-        System.out.println(a + " + " + b + " = " + add(a,b) + "\t[answer=" + (a + b) + "]");
-        System.out.println(a + " - " + b + " = " + minus(a,b) + "\t[answer=" + (a - b) + "]");
-        System.out.println(a + " * " + b + " = " + multiply(a,b) + "\t[answer=" + (a * b) + "]");
+        System.out.println(a + " + " + b + " = " +
+            add(a,b) + "\t[answer=" + (a + b) + "]");
+        System.out.println(a + " - " + b + " = " +
+            minus(a,b) + "\t[answer=" + (a - b) + "]");
+        System.out.println(a + " * " + b + " = " +
+            multiply(a,b) + "\t[answer=" + (a * b) + "]");
         int quotient = divide(a,b);
         if (b != 0) {
-            System.out.println(a + " / " + b + " = " + divide(a,b) + "\t[answer=" + (a / b) + "]");
+            System.out.println(a + " / " + b + " = " +
+                divide(a,b) + "\t[answer=" + (a / b) + "]");
         } else {
-            System.out.println(a + " / " + b + " = " + divide(a,b) + "\t[ERR: should throw IllegalArgumentException!]");
+            System.out.println(a + " / " + b + " = " +
+                divide(a,b) + "\t[ERR: should throw IllegalArgumentException!]");
         }
     }
 

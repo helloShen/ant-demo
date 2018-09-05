@@ -1,9 +1,8 @@
 ### 这是一个用ant来编译，部署，执行一个小型项目的Demo
-代码一多，用shell脚本编译部署就有点吃力了。这是一个系列，试用3个最常用的部署工具，这是其中ant的Demo。
+代码一多，用shell脚本编译构建就有点吃力了。这是一个系列，试用3个最常用的构建工具，这是其中ant的Demo。
 1. ant
 2. maven
 3. gradle
-
 
 
 ### 安装Ant
@@ -43,14 +42,18 @@ Apache Ant(TM) version 1.10.5 compiled on July 10 2018
 项目只有一个`Calculator.java`类，以及一个Ant`build.xml`构建文件，具体拓扑如下，
 ```
 .
+├── README.md
 ├── bin
 │   └── com
 │       └── ciaoshen
 │           └── ant
 │               └── demo
-│                   └── Calculator.class
+│                   ├── Calculator.class
+│                   ├── CalculatorTest.class
+│                   └── TestRunner.class
 ├── build.xml
 ├── lib
+│   └── junit-4.10.jar
 └── src
     ├── main
     │   └── com
@@ -63,53 +66,16 @@ Apache Ant(TM) version 1.10.5 compiled on July 10 2018
             └── ciaoshen
                 └── ant
                     └── demo
+                        ├── CalculatorTest.java
+                        └── TestRunner.java
 ```
-源代码在`src`文件夹下，类文件在`bin`文件夹。项目源代码和测试代码分开放，项目代码在`src/main`路径下，而`src/test`是预留给以后Junit测试类源码的。项目源代码和测试类代码属于同一个包`com.ciaoshen.ant.demo`。
+源代码在`src`文件夹下，类文件在`bin`文件夹。项目源代码和测试代码分开放，项目代码在`src/main`路径下，`src/test`放Junit测试类源码。但两者属于同一个包`com.ciaoshen.ant.demo`。
 
-`Calculator.java`是一个最简单的只能做加减乘除的计算器。`main()`函数里运行一个简单的测试。
-```java
-package com.ciaoshen.ant.demo;
-import java.util.Random;
+* `Calculator.java`是一个最简单的只能做加减乘除的计算器。`main()`函数里运行一个简单的测试。
+* `CalculatorTest.java`是对应的单元测试源码。
+* `TestRunner.java`负责运行编译后`CalculatorTest.class`里的单元测试。
 
-public class Calculator {
-
-    public static int add(int a, int b) {
-        return a + b;
-    }
-    public static int minus(int a, int b) {
-		return a - b;
-	}
-	public static int multiply(int a, int b) {
-		return a * b;
-	}
-    public static int divide(int a, int b) {
-        if (b == 0) {
-            throw new IllegalArgumentException("Dividor can not be 0! Your param a = " + a + ", b = " + b);
-        }
-		return a / b;
-	}
-
-    // traditional unit test
-    private static void test(int a, int b) {
-        System.out.println(a + " + " + b + " = " + add(a,b) + "\t[answer=" + (a + b) + "]");
-        System.out.println(a + " - " + b + " = " + minus(a,b) + "\t[answer=" + (a - b) + "]");
-        System.out.println(a + " * " + b + " = " + multiply(a,b) + "\t[answer=" + (a * b) + "]");
-        int quotient = divide(a,b);
-        if (b != 0) {
-            System.out.println(a + " / " + b + " = " + divide(a,b) + "\t[answer=" + (a / b) + "]");
-        } else {
-            System.out.println(a + " / " + b + " = " + divide(a,b) + "\t[ERR: should throw IllegalArgumentException!]");
-        }
-    }
-
-    public static void main(String[] args) {
-        int max = 1000;
-        Random r = new Random();
-        test(r.nextInt(max), r.nextInt(max) + 1);
-    }
-}
-```
-
+### `build.xml`的结构
 部署的规则都写在`build.xml`文件里。它其实很简单，就做了2件事，
 1. 定义环境变量（主要是路径）
 2. 定义像编译，运行，清理等这些目标任务以及他们之间的依赖关系
@@ -152,13 +118,16 @@ public class Calculator {
     <property name="lib.dir" value="lib"/>
     <!-- entry points -->
     <property name="traditional.entry" value="com.ciaoshen.ant.demo.Calculator"/>
-    <property name="junit.entry" value="com.ciaoshen.ant.demo.CalculatorTest/"/>
+    <property name="junit.entry" value="com.ciaoshen.ant.demo.TestRunner"/>
 
     <!-- build classpath collection with a path-like structure -->
     <path id="build.classpath">
         <pathelement path="${bin.dir}"/>
+    </path>
+    <path id="junit.classpath">
+        <pathelement path="${bin.dir}"/>
         <fileset dir="${lib.dir}">
-            <include name="*.jar"/>
+            <include name="junit-4.10.jar"/>
         </fileset>
     </path>
 
@@ -180,6 +149,10 @@ public class Calculator {
             <include name="**/*.java"/>
             <classpath refid="build.classpath"/>
         </javac>
+        <javac destdir="${bin.dir}" srcdir="${test.dir}" source="1.6" debug="on" includeantruntime="false">
+            <include name="**/*.java"/>
+            <classpath refid="junit.classpath"/>
+        </javac>
     </target>
     <target name="traditional.exec" description="Launch traditional test.">
         <echo>Run ${traditional.entry}!</echo>
@@ -190,7 +163,7 @@ public class Calculator {
     <target name="junit.exec" description="Launch Junit test.">
         <echo>Run ${junit.entry}!</echo>
         <java classname="${junit.entry}">
-            <classpath refid="build.classpath"/>
+            <classpath refid="junit.classpath"/>
         </java>
     </target>
     <target name="clean" description="Clean output directories.">
